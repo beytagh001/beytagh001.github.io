@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="学习了一波某师傅的代码审计，以后开始写一些PHP代码审计的文章">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP代码审计-YIXUNCMS2.0">
+<meta property="og:url" content="http://example.com/2021/04/22/PHP%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1-YIXUNCMS2.0/index.html">
+<meta property="og:site_name" content="Beytagh&#39;s blog">
+<meta property="og:description" content="学习了一波某师傅的代码审计，以后开始写一些PHP代码审计的文章">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200603145829145.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200603151414965.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200603163620135.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200530225536433.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531113421531.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531115302393.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531122227406.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531145611371.png">
+<meta property="og:image" content="c:/Users/Administrator/Desktop/PHP代码审计-cms-YIXUNCMS2.0.assets/image-20200531161537635.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531161121634.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531161249114.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531162229819.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601094122061.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601094813538.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601095229836.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601102154330.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601102559702.png">
+<meta property="og:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601115326155.png">
+<meta property="article:published_time" content="2021-04-22T02:53:35.691Z">
+<meta property="article:modified_time" content="2021-04-22T03:27:36.362Z">
+<meta property="article:author" content="Beytagh">
+<meta property="article:tag" content="YIXUNCMS2.0">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200603145829145.png">
+
+<link rel="canonical" href="http://example.com/2021/04/22/PHP%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1-YIXUNCMS2.0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>PHP代码审计-YIXUNCMS2.0 | Beytagh's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Beytagh's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">PWN oh!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-friends">
+
+    <a href="/friends/" rel="section"><i class="fas fa-users fa-fw"></i>友链</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/22/PHP%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1-YIXUNCMS2.0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/beytagh.jpg">
+      <meta itemprop="name" content="Beytagh">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Beytagh's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PHP代码审计-YIXUNCMS2.0
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-04-22 10:53:35 / 修改时间：11:27:36" itemprop="dateCreated datePublished" datetime="2021-04-22T10:53:35+08:00">2021-04-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/php%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/" itemprop="url" rel="index"><span itemprop="name">php代码审计</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>学习了一波某师傅的代码审计，以后开始写一些PHP代码审计的文章</p>
+<span id="more"></span>
+
+<p>一些常见的危险函数如：eval、assert 、file_put_contents、move_uploaded_file、unlink…等等</p>
+<p>YIXUNCMS2.0采用mvc框架，快速通读了cms大致的目录如下，开始危险函数的查找</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200603145829145.png" alt="image-20200603145829145"></p>
+<p>这是在rips代码审计工具中扫描到的结果，能够自动化地挖掘 PHP 源代码潜在的安全漏洞</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200603151414965.png" alt="image-20200603151414965"></p>
+<h4 id="一、任意文件删除"><a href="#一、任意文件删除" class="headerlink" title="一、任意文件删除"></a>一、任意文件删除</h4><p><strong>admin/controls/flink.class.php</strong></p>
+<p>代码中中存在危险函数参数可控的函数</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200603163620135.png" alt="image-20200603163620135"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">update</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">      <span class="variable">$flink</span> = D(<span class="string">&#x27;flink&#x27;</span>);</span><br><span class="line">   <span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$_POST</span>[<span class="string">&#x27;logoc&#x27;</span>]))&#123;</span><br><span class="line">      <span class="variable">$logo</span> = <span class="variable">$flink</span>-&gt;downlogo(<span class="variable">$_POST</span>[<span class="string">&#x27;logoc&#x27;</span>]);</span><br><span class="line">      <span class="variable">$srclogo</span> = PROJECT_PATH.<span class="string">&quot;public/uploads/logos/&quot;</span>.<span class="variable">$_POST</span>[<span class="string">&quot;logo&quot;</span>];</span><br><span class="line">      <span class="keyword">if</span>(file_exists(<span class="variable">$srclogo</span>))</span><br><span class="line">         unlink(<span class="variable">$srclogo</span>);</span><br><span class="line">   &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">      <span class="variable">$logo</span> = <span class="variable">$_POST</span>[<span class="string">&quot;logo&quot;</span>];</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">if</span>(<span class="variable">$logo</span>)&#123;</span><br><span class="line">      <span class="variable">$_POST</span>[<span class="string">&quot;logo&quot;</span>] = <span class="variable">$logo</span>;</span><br><span class="line">      <span class="keyword">if</span>(<span class="variable">$flink</span>-&gt;update(<span class="variable">$_POST</span>,<span class="number">1</span>,<span class="number">1</span>))&#123;</span><br><span class="line">         <span class="keyword">$this</span>-&gt;redirect(<span class="string">&quot;index&quot;</span>);</span><br><span class="line">      &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">         <span class="variable">$mess</span> = <span class="variable">$flink</span>-&gt;getMsg();</span><br><span class="line">         <span class="keyword">if</span>(<span class="variable">$mess</span> == <span class="string">&quot;&quot;</span>)</span><br><span class="line">            <span class="variable">$mess</span> = <span class="string">&quot;您未做任何修改&quot;</span>;</span><br><span class="line">         <span class="keyword">$this</span>-&gt;mess(<span class="variable">$mess</span>,<span class="literal">false</span>);</span><br><span class="line">         <span class="keyword">$this</span>-&gt;assign(<span class="string">&quot;post&quot;</span>,<span class="variable">$_POST</span>);</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">      <span class="keyword">$this</span>-&gt;mess(<span class="string">&quot;LOGO下载失败，请检查URL地址是否正确&quot;</span>,<span class="literal">false</span>);</span><br><span class="line">      <span class="keyword">$this</span>-&gt;assign(<span class="string">&quot;post&quot;</span>,<span class="variable">$_POST</span>);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">$this</span>-&gt;display(<span class="string">&quot;mod&quot;</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>update</code>这个函数中存在操作文件的一个过程，并且<code>unlink</code>函数的参数是我们可控的</p>
+<p>先过第一个if，post发送一个值让它不为空，再往下程序又接收一个<code>logo</code>的变量并且也是可控的</p>
+<p>再往下看判断文件是否存在，再执行删除操作</p>
+<p>审计了上面的内容，我们就可以开始构造poc来验证了，由于是MVC框架访问的方式也是不一样的</p>
+<p><code>public/uploads/logos</code>我们用三个../目录穿越回到cms的根目录删除文件</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200530225536433.png" alt="image-20200530225536433"></p>
+<p>下断点，在debug中就可以观察到poc验证时的状态，最终拼接出来的文件路径就可以达到任意文件删除效果</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531113421531.png" alt="image-20200531113421531"></p>
+<p>只要我们删除install_lock.txt文件就可以重新安装该cms系统</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531115302393.png" alt="image-20200531115302393"></p>
+<h4 id="二、任意内容写入"><a href="#二、任意内容写入" class="headerlink" title="二、任意内容写入"></a>二、任意内容写入</h4><p><strong>models/flink.class.php</strong></p>
+<p><code>file_put_contents</code>危险函数搜索，先分析在被调用的地方是否有可控的参数</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531122227406.png" alt="image-20200531122227406"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Flink</span></span>&#123;</span><br><span class="line">   <span class="function"><span class="keyword">function</span> <span class="title">downlogo</span>(<span class="params"><span class="variable">$logourl</span></span>)</span>&#123;</span><br><span class="line">      <span class="variable">$url</span> = parse_url(<span class="variable">$logourl</span>);</span><br><span class="line">      <span class="variable">$logoname</span> = str_replace(<span class="string">&quot;.&quot;</span>,<span class="string">&quot;_&quot;</span>,<span class="variable">$url</span>[<span class="string">&#x27;host&#x27;</span>]).<span class="string">&quot;.&quot;</span>.array_pop(explode(<span class="string">&quot;.&quot;</span>,basename(<span class="variable">$logourl</span>)));</span><br><span class="line">      <span class="variable">$path</span> = PROJECT_PATH.<span class="string">&quot;public/uploads/logos/&quot;</span>;</span><br><span class="line">      <span class="keyword">if</span>(!file_exists(<span class="variable">$path</span>))&#123;</span><br><span class="line">         mkdir(<span class="variable">$path</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="variable">$location</span> = <span class="variable">$path</span>.<span class="variable">$logoname</span>;</span><br><span class="line">      <span class="variable">$data</span> = file_get_contents(<span class="variable">$logourl</span>);</span><br><span class="line">      <span class="keyword">if</span>(strlen(<span class="variable">$data</span>) &gt; <span class="number">0</span>)&#123;</span><br><span class="line">         file_put_contents(<span class="variable">$location</span>,<span class="variable">$data</span>);</span><br><span class="line">         <span class="keyword">return</span> <span class="variable">$logoname</span>;</span><br><span class="line">      &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">         <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>str_replace</code>会把接收到的host的点替换为下划线，后面的<code>array_pop</code>是提取后缀名的操作并且没有过滤，我们传参时直接传递一个php后缀的文件即可，最后会拼接成host.php</p>
+<p>由于在MVC框架中<code>models</code>是不能被直接访问的，我们必须在<code>controls</code>找调用<code>downlogo</code>的地方</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531145611371.png" alt="image-20200531145611371"></p>
+<p>在<code>controls/flink.class.php</code>文件中<code>insert</code>方法调用了<code>downlogo</code>，传递给downlogo的参数是可控的，我们直接调用这个方法传递一个数据给downlogo函数写入</p>
+<p>审计完内容后我们来构造poc来验证一下</p>
+<p><code>file_put_contents</code>函数是读取内容写入到文件的一个函数，我们把需要写入的内容放在另外一个文件中，然后传递给<code>file_put_contents</code>函数读取</p>
+<p><img src="C:\Users\Administrator\Desktop\PHP代码审计-cms-YIXUNCMS2.0.assets\image-20200531161537635.png" alt="image-20200531161537635"></p>
+<p>这里我们随意在可访问的文件中写一个phpinfo的内容写入即可</p>
+<p>在debug中的状态，传递给<code>file_put_contents</code>的<code>$data</code>已经变成了我们写入的内容</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531161121634.png" alt="image-20200531161121634"></p>
+<p>我们再去查看<code>YIXUNCMS2.0\public\uploads\logos</code>目录下存在一个文件，就是我们刚刚写入的</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531161249114.png" alt="image-20200531161249114"></p>
+<p>直接访问即可</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200531162229819.png" alt="image-20200531162229819"></p>
+<h4 id="三、任意内容写入"><a href="#三、任意内容写入" class="headerlink" title="三、任意内容写入"></a>三、任意内容写入</h4><p><strong>classes/baseset.class.php</strong></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601094122061.png" alt="image-20200601094122061"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">static</span> <span class="function"><span class="keyword">function</span> <span class="title">writeindex</span>(<span class="params"><span class="variable">$style</span>,<span class="variable">$start</span></span>)</span>&#123;</span><br><span class="line">   <span class="variable">$file</span>=PROJECT_PATH.<span class="string">&quot;index.php&quot;</span>;</span><br><span class="line">   <span class="variable">$content</span>=file_get_contents(<span class="variable">$file</span>);</span><br><span class="line">   <span class="variable">$reg</span>[]=<span class="string">&quot;/define\(\&quot;TPLSTYLE\&quot;.+?;/i&quot;</span>;</span><br><span class="line">   <span class="variable">$reg</span>[]=<span class="string">&quot;/define\(\&quot;CSTART\&quot;.+?;/i&quot;</span>;</span><br><span class="line">   <span class="variable">$rep</span>[]=<span class="string">&quot;define(\&quot;TPLSTYLE\&quot;,\&quot;<span class="subst">&#123;$style&#125;</span>\&quot;);&quot;</span>;</span><br><span class="line">   <span class="variable">$rep</span>[]=<span class="string">&quot;define(\&quot;CSTART\&quot;,\&quot;<span class="subst">&#123;$start&#125;</span>\&quot;);&quot;</span>;</span><br><span class="line">   file_put_contents(<span class="variable">$file</span>, preg_replace(<span class="variable">$reg</span>, <span class="variable">$rep</span>, <span class="variable">$content</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>writeindex</code>方法在写入内容时有两个参数是通过参数传递过来的，由于MVC框架，这里也是不能直接访问我们找一下在哪调用了这个函数，然后再查看参数是否可控</p>
+<p><code>writeConfig</code>方法中调用了<code>writeindex</code></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601094813538.png" alt="image-20200601094813538"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">static</span> <span class="function"><span class="keyword">function</span> <span class="title">writeConfig</span>(<span class="params"><span class="variable">$post</span></span>)</span>&#123;</span><br><span class="line">   <span class="variable">$confile</span>=PROJECT_PATH.<span class="string">&quot;config.inc.php&quot;</span>;</span><br><span class="line">   <span class="variable">$configText</span> = file_get_contents(<span class="variable">$confile</span>);</span><br><span class="line">   <span class="built_in">self</span>::writeindex(<span class="variable">$post</span>[<span class="string">&#x27;appStyle&#x27;</span>], <span class="variable">$post</span>[<span class="string">&#x27;cstart&#x27;</span>]);</span><br></pre></td></tr></table></figure>
+
+<p>我们继续跟进调用<code>writeConfig</code>的地方</p>
+<p>在<code>admin/controls/base.class.php</code>中调用<code>set</code>方法，<code>set</code>方法调用了<code>writeConfig</code>方法</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601095229836.png" alt="image-20200601095229836"></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">set</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">   <span class="keyword">if</span>(BaseSet::writeConfig(<span class="variable">$_POST</span>))&#123;</span><br><span class="line">      <span class="keyword">$this</span>-&gt;redirect(<span class="string">&#x27;baseset&#x27;</span>,<span class="string">&#x27;stats/1/mess/&#x27;</span>.base64_encode(<span class="string">&#x27;设置成功&#x27;</span>));</span><br><span class="line">   &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">      <span class="keyword">$this</span>-&gt;redirect(<span class="string">&#x27;baseset&#x27;</span>,<span class="string">&#x27;stats/0/mess/&#x27;</span>.base64_encode(<span class="string">&#x27;设置失败，请检查&#x27;</span>));</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>审计了上面的内容，我们来构造poc</p>
+<p><code>writeindex</code>方法是修改<code>index.php</code>中<code>CSTART</code>和<code>TPLSTYLE</code>两个常量的值</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">define(&quot;CSTART&quot;,&quot;0&quot;);</span><br><span class="line">define(&quot;TPLSTYLE&quot;,&quot;default&quot;);</span><br></pre></td></tr></table></figure>
+
+<p>构造闭合<code>0&quot;);&lt;?php phpinfo();?&gt;&lt;?php //</code></p>
+<p>闭合第一个值第二值自然就无需传递了为空即可</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601102154330.png" alt="image-20200601102154330"></p>
+<p>我们去查看index.php的值就已经被成功覆盖了</p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601102559702.png" alt="image-20200601102559702"></p>
+<p><img src="https://gitee.com/beytagh/beytagh/raw/master/img/image-20200601115326155.png" alt="image-20200601115326155"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/YIXUNCMS2-0/" rel="tag"># YIXUNCMS2.0</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/12/12/%E8%85%BE%E8%AE%AF%E7%8A%80%E7%89%9B%E9%B8%9F%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8T-Star%E9%AB%98%E6%A0%A1%E6%8C%91%E6%88%98%E8%B5%9B/" rel="prev" title="2020腾讯犀牛鸟网络安全T-Star高校挑战赛">
+      <i class="fa fa-chevron-left"></i> 2020腾讯犀牛鸟网络安全T-Star高校挑战赛
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/04/22/Typora+PicGo+gitee%E5%9B%BE%E5%BA%8A/" rel="next" title="Typora+PicGo+Gitee图床">
+      Typora+PicGo+Gitee图床 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E5%88%A0%E9%99%A4"><span class="nav-number">1.</span> <span class="nav-text">一、任意文件删除</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BB%BB%E6%84%8F%E5%86%85%E5%AE%B9%E5%86%99%E5%85%A5"><span class="nav-number">2.</span> <span class="nav-text">二、任意内容写入</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E4%BB%BB%E6%84%8F%E5%86%85%E5%AE%B9%E5%86%99%E5%85%A5"><span class="nav-number">3.</span> <span class="nav-text">三、任意内容写入</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Beytagh"
+      src="/uploads/beytagh.jpg">
+  <p class="site-author-name" itemprop="name">Beytagh</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Beytagh</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
